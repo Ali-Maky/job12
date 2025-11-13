@@ -52,3 +52,8 @@ function parseMultipart(req){
     req.pipe(bb);
   });
 }
+export const config = {
+  api: {
+    bodyParser: false, // <--- This tells Vercel/Next.js to leave the body as a stream
+  },
+};
