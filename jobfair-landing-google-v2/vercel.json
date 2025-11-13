@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "api/upload.js": {
+      "memory": 512,  // Set memory to 512MB (default is 1024MB on Pro/Enterprise, 1024MB on Hobby)
+      "maxDuration": 15 // Set timeout to 15 seconds (default is 10s on Hobby)
+    }
+  },
+  "crons": [] 
+}
