@@ -1,6 +1,7 @@
 const BusboyNS = require("busboy");
 const { google } = require("googleapis");
 const { getAuth } = require("./_google");
+const stream = require('stream'); // ADD STREAM UTILITY
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ ok:false, error:"Method not allowed" });
@@ -11,6 +12,12 @@ module.exports = async (req, res) => {
     const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID || "";
     if (!folderId) return res.status(500).json({ ok:false, error:"Missing GOOGLE_DRIVE_FOLDER_ID" });
 
+    // --- FIX: Create a Readable Stream from the Buffer ---
+    const bufferStream = new stream.Readable();
+    bufferStream.push(file.buffer);
+    bufferStream.push(null); // End the stream
+    // ----------------------------------------------------
+
     const auth = getAuth();
     const drive = google.drive({ version: "v3", auth });
 
@@ -19,11 +26,14 @@ module.exports = async (req, res) => {
 
     const created = await drive.files.create({
       requestBody: { name, parents: [folderId] },
-      media: { mimeType: file.mimetype, body: Buffer.from(file.buffer) },
+      // USE THE STREAM AS THE MEDIA BODY
+      media: { mimeType: file.mimetype, body: bufferStream }, 
       fields: "id, webViewLink"
     });
 
     const id = created.data.id;
+    // Note: Creating 'reader' permissions for 'anyone' exposes the file publicly.
+    // Ensure this is intentional for your workflow.
     await drive.permissions.create({ fileId: id, requestBody: { role:"reader", type:"anyone" } });
     const webViewLink = created.data.webViewLink || ("https://drive.google.com/file/d/" + id + "/view");
 
@@ -36,7 +46,8 @@ module.exports = async (req, res) => {
 
 function parseMultipart(req){
   return new Promise((resolve,reject)=>{
-    const bb = BusboyNS({ headers: req.headers });
+    // Use BusboyNS directly as it was required above
+    const bb = BusboyNS({ headers: req.headers }); 
     const fields = {};
     let fileBuf, fileName = "", mime = "";
     bb.on("field",(name,val)=>{ fields[name]=val; });
@@ -52,8 +63,3 @@ function parseMultipart(req){
     req.pipe(bb);
   });
 }
-export const config = {
-  api: {
-    bodyParser: false, // <--- This tells Vercel/Next.js to leave the body as a stream
-  },
-};
