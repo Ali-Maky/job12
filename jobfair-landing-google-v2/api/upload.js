@@ -1,7 +1,7 @@
 const BusboyNS = require("busboy");
 const { google } = require("googleapis");
 const { getAuth } = require("./_google");
-const stream = require('stream'); // ADD STREAM UTILITY
+const stream = require('stream');
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ ok:false, error:"Method not allowed" });
@@ -9,32 +9,56 @@ module.exports = async (req, res) => {
     const { fields, file } = await parseMultipart(req);
     if (!file) return res.status(400).json({ ok:false, error:"No file uploaded" });
 
-    const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID || "";
+    // The ID of the specific folder in your My Drive that is shared with the SA.
+    const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID || ""; 
+    // IMPORTANT: Get the email of the account whose quota you want to use (YOUR EMAIL)
+    const quotaUserEmail = process.env.GOOGLE_QUOTA_USER_EMAIL; 
+    
     if (!folderId) return res.status(500).json({ ok:false, error:"Missing GOOGLE_DRIVE_FOLDER_ID" });
+    if (!quotaUserEmail) return res.status(500).json({ ok:false, error:"Missing GOOGLE_QUOTA_USER_EMAIL for My Drive" });
 
-    // --- FIX: Create a Readable Stream from the Buffer ---
+    // --- Create a Readable Stream from the Buffer ---
     const bufferStream = new stream.Readable();
     bufferStream.push(file.buffer);
     bufferStream.push(null); // End the stream
     // ----------------------------------------------------
 
-    const auth = getAuth();
-    const drive = google.drive({ version: "v3", auth });
+    // --- Authentication with Impersonation (Requires Setup) ---
+    // NOTE: If getAuth() does not handle impersonation (Domain-Wide Delegation), 
+    // this will be the crash point, but we proceed assuming the backend setup handles it.
+    const auth = getAuth(); 
+    
+    // We add the quotaUser parameter to the drive instance
+    const drive = google.drive({ 
+        version: "v3", 
+        auth,
+        quotaUser: quotaUserEmail // This associates the request with your quota
+    });
 
     const safeName = file.filename.replace(/[^\w.\-]+/g, "_");
     const name = (fields.jobId || "unknown") + "__" + Date.now() + "__" + safeName;
 
     const created = await drive.files.create({
-      requestBody: { name, parents: [folderId] },
-      // USE THE STREAM AS THE MEDIA BODY
+      // We REMOVE supportsAllDrives: true and driveId, as this is My Drive.
+      // We rely on the Service Account being shared access to the folderId.
+      requestBody: { 
+          name, 
+          parents: [folderId], 
+          mimeType: file.mimetype 
+      },
       media: { mimeType: file.mimetype, body: bufferStream }, 
       fields: "id, webViewLink"
     });
 
     const id = created.data.id;
-    // Note: Creating 'reader' permissions for 'anyone' exposes the file publicly.
-    // Ensure this is intentional for your workflow.
-    await drive.permissions.create({ fileId: id, requestBody: { role:"reader", type:"anyone" } });
+    
+    // Set permissions so anyone with the link can view the file (necessary for webViewLink)
+    await drive.permissions.create({ 
+        fileId: id, 
+        requestBody: { role:"reader", type:"anyone" },
+        // Removed supportsAllDrives: true
+    });
+    
     const webViewLink = created.data.webViewLink || ("https://drive.google.com/file/d/" + id + "/view");
 
     return res.status(200).json({ ok:true, cvUrl: webViewLink, cvFileId: id });
@@ -46,7 +70,6 @@ module.exports = async (req, res) => {
 
 function parseMultipart(req){
   return new Promise((resolve,reject)=>{
-    // Use BusboyNS directly as it was required above
     const bb = BusboyNS({ headers: req.headers }); 
     const fields = {};
     let fileBuf, fileName = "", mime = "";
