@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Woman In Tech 2025 - Job Fair</title>
+  <style>
+    :root { --purple:#7c3aed; --fuchsia:#c026d3; --border:#e5e7eb; --text:#111827; --muted:#6b7280; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial; background:#fafafa; color:var(--text); }
+    .container{max-width:1120px;margin:0 auto;padding:16px;}
+    .header{position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter: blur(6px);border-bottom:1px solid var(--border);z-index:10;}
+    .hstack{display:flex;align-items:center;gap:12px}
+    .spacer{flex:1}
+    .logo{height:28px; width:auto; object-fit:contain; display:block}
+    .title{font-weight:800;font-size:26px;margin:0}
+    .select,input,textarea{border:1px solid var(--border);border-radius:12px;padding:10px;width:100%}
+    .btn{background:linear-gradient(90deg,var(--purple),var(--fuchsia)); color:#fff; border-radius:12px; padding:10px 14px; font-weight:700; border:0; cursor:pointer}
+    .btn-outline{background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 14px; cursor:pointer}
+    .pill{border-radius:999px; padding:4px 10px; font-size:12px; background:#f3e8ff; color:#6b21a8; font-weight:700}
+    .muted{color:var(--muted)}
+    .card{background:#fff; border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:0 1px 2px rgba(0,0,0,.04); transition: box-shadow .2s, transform .2s, border-color .2s}
+    .card:hover{ box-shadow:0 10px 16px rgba(124,58,237,.12); transform: translateY(-2px); border-color:#d8b4fe }
+    .grid{display:grid;gap:16px}
+    @media(min-width:640px){.grid-2{grid-template-columns:repeat(2, minmax(0,1fr));}}
+    @media(min-width:1024px){.grid-3{grid-template-columns:repeat(3, minmax(0,1fr));}}
+    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:50}
+    .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4)}
+    .modalCard{position:relative;background:#fff;border-radius:20px;max-width:960px;width:100%;max-height:90vh;overflow:auto;padding:24px;border:1px solid var(--border)}
+    .stickyHead{position:sticky;top:0;background:rgba(255,255,255,.95);backdrop-filter: blur(6px);padding:12px 24px;margin:-24px -24px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .footer{border-top:1px solid var(--border);background:#fff}
+    .chip{border-radius:999px;background:#f3f4f6;padding:4px 10px;font-size:12px}
+    .danger{background:#fee2e2;color:#b91c1c;border-radius:999px;padding:2px 8px;border:0;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
